@@ -3,7 +3,7 @@
 elgg_register_event_handler('init', 'system', 'roles_acl_init');
 
 function roles_acl_init() {
-	
+
 	elgg_register_library('roles.acl', elgg_get_plugins_path() . 'roles_acl/lib/acl.php');
 	elgg_load_library('roles.acl');
 
@@ -61,14 +61,14 @@ function roles_acl_create_role_object($event, $type, $obj) {
 	if ($obj->name != 'name') {
 		return true;
 	}
-	
+
 	$entity = get_entity($obj->entity_guid);
 	if (!elgg_instanceof($entity, 'object', 'role')) {
 		return true;
 	}
 
 	$acl_member_roles = array($entity);
-	
+
 	roles_acl_setup_role_based_acls(null, $acl_member_roles);
 
 	return true;
@@ -78,22 +78,22 @@ function roles_acl_create_role_object($event, $type, $obj) {
  * Role object has been deleted
  *	- delete associated global ACL
  *  - delete friend ACLs
- * 
+ *
  * @param str $event 'delete'
  * @param str $type 'object'
- * @param ElggEntity $entity 
- * @return bool 
+ * @param ElggEntity $entity
+ * @return bool
  */
 function roles_acl_delete_role_object($event, $type, $entity) {
 
 	if (!elgg_instanceof($entity, 'object', 'role')) {
 		return true;
 	}
-		
+
 	$acl_member_roles = array($entity);
-	
+
 	roles_acl_remove_role_based_acls($acl_member_roles);
-	
+
 	return true;
 }
 
@@ -105,10 +105,10 @@ function roles_acl_delete_role_object($event, $type, $entity) {
  *	'delete' : remove user from all ACLs with $acl_member_role = role being deleted
  *  'create' : add user to all ACLs with $acl_member_role = new role
  *  'update' : perform 'delete' on old role and 'create' on new role
- * 
+ *
  * @param type $type
  * @param type $relationship
- * @return type 
+ * @return type
  */
 function roles_acl_role_change($event, $type, $relationship) {
 
@@ -144,15 +144,15 @@ function roles_acl_role_change($event, $type, $relationship) {
 
 /**
  * Listen to frienship relationship between users and update when necessary
- * 
+ *
  * @param type $event
  *   'delete' : remove $friend from $user's ACL's
  *   'create' : add $friend to $user's ACL's
  *   'update' : do nothing
- * 
+ *
  * @param type $type
  * @param type $relationship
- * @return type 
+ * @return type
  */
 function roles_acl_friendship_status($event, $type, $relationship) {
 
@@ -205,12 +205,6 @@ function roles_acl_write_access_array($hook, $type, $return, $params) {
 
 	$acls = unserialize($settings);
 
-	$tmp = array(
-		ACCESS_PRIVATE => elgg_echo("PRIVATE"),
-		ACCESS_FRIENDS => elgg_echo("access:friends:label"),
-		ACCESS_LOGGED_IN => elgg_echo("LOGGED_IN"),
-		ACCESS_PUBLIC => elgg_echo("PUBLIC")
-	);
 	$custom = array();
 
 	if (isset($acls['global'][$role->name])) {
@@ -219,6 +213,15 @@ function roles_acl_write_access_array($hook, $type, $return, $params) {
 			if ($collection) {
 				$custom["$collection->id"] = elgg_echo($collection->name);
 			}
+		}
+	}
+
+	// Unset friends ACLs created by roles_acl and only append those that are defined in settings
+	/** @todo: find a better approach */
+	foreach ($return as $id => $name) {
+		$is_roles_acl = explode(':', $name);
+		if (sizeof($is_roles_acl) == 3 && $is_roles_acl[0] == 'acl' && $is_roles_acl[2] == 'friends') {
+			unset($return[$id]);
 		}
 	}
 
@@ -231,7 +234,7 @@ function roles_acl_write_access_array($hook, $type, $return, $params) {
 		}
 	}
 
-	$custom = $tmp + $custom;
+	$custom = $return + $custom;
 
 	return $custom;
 }
