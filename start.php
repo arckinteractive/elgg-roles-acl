@@ -205,13 +205,11 @@ function roles_acl_write_access_array($hook, $type, $return, $params) {
 
 	$acls = unserialize($settings);
 
-	$custom = array();
-
 	if (isset($acls['global'][$role->name])) {
 		foreach ($acls['global'][$role->name] as $acl_member_role) {
 			$collection = roles_acl_get_global_acl_by_member_role($acl_member_role);
 			if ($collection) {
-				$custom["$collection->id"] = elgg_echo($collection->name);
+				$return[$collection->id] = elgg_echo($collection->name);
 			}
 		}
 	}
@@ -229,12 +227,30 @@ function roles_acl_write_access_array($hook, $type, $return, $params) {
 		foreach ($acls['friends'][$role->name] as $acl_member_role) {
 			$collection = roles_acl_get_friends_acl_by_member_role($user->guid, $acl_member_role);
 			if ($collection) {
-				$custom["$collection->id"] = elgg_echo($collection->name);
+				$return[$collection->id] = elgg_echo($collection->name);
 			}
 		}
 	}
 
-	$custom = $return + $custom;
+	return $return;
+}
 
-	return $custom;
+function roles_acl_get_readable_access_level($access_id) {
+
+	$access = (int) $access_id;
+
+	//get the access level for object in readable string
+	$options = get_write_access_array();
+
+	if (array_key_exists($access, $options)) {
+		return $options[$access];
+	} else {
+		$collection = get_access_collection($access_id);
+		if ($collection) {
+			return elgg_echo($collection->name);
+		}
+	}
+
+	// return 'Limited' if the user does not have access to the access collection
+	return elgg_echo('access:limited:label');
 }
